@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import errorHandler from "./middleware/errorHandler";
 import { OK } from "./constants/statusCode";
+import authRoutes from "./routes/auth.route";
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.get("/", (req, res) => {
     message: "healthy",
   });
 });
+
+app.use("/auth", authRoutes);
 
 app.use(errorHandler);
 
