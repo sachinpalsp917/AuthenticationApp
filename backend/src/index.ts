@@ -5,6 +5,7 @@ import { APP_ORIGIN, NODE_ENV, PORT } from "./constants/env";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import errorHandler from "./middleware/errorHandler";
+import { OK } from "./constants/statusCode";
 
 const app = express();
 
@@ -18,7 +19,7 @@ app.use(
   })
 );
 app.get("/", (req, res) => {
-  res.status(200).json({
+  res.status(OK).json({
     message: "healthy",
   });
 });
