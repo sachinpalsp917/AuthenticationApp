@@ -1,11 +1,21 @@
 import { z } from "zod";
 import catchError from "../utils/catchError";
-import { createAccount, loginUser } from "../services/auth.service";
-import { CREATED, OK } from "../constants/statusCode";
-import { clearAuthCookies, setAuthCookies } from "../utils/cookies";
+import {
+  createAccount,
+  loginUser,
+  refreshUserAccessToken,
+} from "../services/auth.service";
+import { CREATED, OK, UNAUTHORIZED } from "../constants/statusCode";
+import {
+  clearAuthCookies,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
+  setAuthCookies,
+} from "../utils/cookies";
 import { loginSchema, registerSchema } from "../schema/auth.schema";
 import { verifyToken } from "../utils/jwt";
 import SessionModel from "../models/session.model";
+import appAssert from "../utils/appAssert";
 
 export const registerHandler = catchError(async (req, res) => {
   //validate request
@@ -35,8 +45,8 @@ export const loginHandler = catchError(async (req, res) => {
 });
 
 export const logoutHandler = catchError(async (req, res) => {
-  const accessToken = req.cookies.accessToken;
-  const { payload } = verifyToken(accessToken);
+  const accessToken = req.cookies.accessToken as string | undefined;
+  const { payload } = verifyToken(accessToken || "");
 
   if (payload) {
     await SessionModel.findByIdAndDelete(payload.sessionId);
@@ -44,4 +54,24 @@ export const logoutHandler = catchError(async (req, res) => {
   return clearAuthCookies(res)
     .status(OK)
     .json({ message: "logout successful " });
+});
+
+export const refreshHandler = catchError(async (req, res) => {
+  const refreshToken = req.cookies["refresh-token"] as string | undefined;
+  appAssert(refreshToken, UNAUTHORIZED, "Missign refresh token");
+
+  const { accessToken, newRefershToken } =
+    await refreshUserAccessToken(refreshToken);
+
+  if (newRefershToken) {
+    res.cookie(
+      "refresh-token",
+      newRefershToken,
+      getRefreshTokenCookieOptions()
+    );
+  }
+
+  res
+    .status(OK)
+    .cookie("access-token", accessToken, getAccessTokenCookieOptions());
 });
