@@ -4,6 +4,7 @@ import {
   createAccount,
   loginUser,
   refreshUserAccessToken,
+  verifyEmail,
 } from "../services/auth.service";
 import { CREATED, OK, UNAUTHORIZED } from "../constants/statusCode";
 import {
@@ -12,7 +13,11 @@ import {
   getRefreshTokenCookieOptions,
   setAuthCookies,
 } from "../utils/cookies";
-import { loginSchema, registerSchema } from "../schema/auth.schema";
+import {
+  loginSchema,
+  registerSchema,
+  verificationEmailCodeSchema,
+} from "../schema/auth.schema";
 import { verifyToken } from "../utils/jwt";
 import SessionModel from "../models/session.model";
 import appAssert from "../utils/appAssert";
@@ -74,4 +79,16 @@ export const refreshHandler = catchError(async (req, res) => {
   res
     .status(OK)
     .cookie("access-token", accessToken, getAccessTokenCookieOptions());
+});
+
+export const verifyEmailHandler = catchError(async (req, res) => {
+  const verificationEmailCode = verificationEmailCodeSchema.parse(
+    req.params.code
+  );
+
+  await verifyEmail(verificationEmailCode);
+
+  res.status(OK).json({
+    message: "Email verified",
+  });
 });
